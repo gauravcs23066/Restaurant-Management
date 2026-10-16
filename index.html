@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aura Bistro — Smart Restaurant Management System</title>
+  <meta name="description"
+    content="Next-generation restaurant management dashboard featuring live kitchen order ticketing, real-time table floor layout, dynamic POS ordering, inventory, and sales analytics.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Font Awesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Application Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="theme-dark">
+  <div class="app-layout" id="appLayout">
+
+    <!-- Collapsible Sidebar -->
+    <aside class="sidebar" id="mainSidebar">
+      <div class="sidebar-brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-fire-burner"></i>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">AURA</span>
+          <span class="brand-tag">Bistro & Lounge</span>
+        </div>
+        <button class="sidebar-collapse-btn" id="sidebarToggle" aria-label="Toggle Sidebar">
+          <i class="fa-solid fa-angles-left"></i>
+        </button>
+      </div>
+
+      <div class="service-status-pill">
+        <span class="status-pulse"></span>
+        <span class="status-text">Dinner Service • Live</span>
+        <span class="table-fill-badge" id="serviceOccupancyPill">78%</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Operations</div>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <button class="nav-btn active" data-view="dashboard" id="navDashboard">
+              <i class="fa-solid fa-chart-pie"></i>
+              <span>Dashboard</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-btn" data-view="orders" id="navOrders">
+              <i class="fa-solid fa-bell-concierge"></i>
+              <span>Live Orders</span>
+              <span class="nav-counter" id="activeOrdersCount">7</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-btn" data-view="tables" id="navTables">
+              <i class="fa-solid fa-layer-group"></i>
+              <span>Table Plan</span>
+              <span class="nav-subtag" id="vacantTablesCount">5 Vacant</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-btn" data-view="menu" id="navMenu">
+              <i class="fa-solid fa-utensils"></i>
+              <span>Menu & Catalog</span>
+            </button>
+          </li>
+        </ul>
+
+        <div class="nav-section-title">Insights & Management</div>
+        <ul class="nav-list">
+          <li class="nav-item">
+            <button class="nav-btn" data-view="analytics" id="navAnalytics">
+              <i class="fa-solid fa-arrow-trend-up"></i>
+              <span>Sales & Reports</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-btn" data-view="inventory" id="navInventory">
+              <i class="fa-solid fa-boxes-stacked"></i>
+              <span>Inventory Alert</span>
+              <span class="nav-counter warning" id="lowStockCount">3</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-btn" data-view="staff" id="navStaff">
+              <i class="fa-solid fa-user-group"></i>
+              <span>Staff on Shift</span>
+              <span class="nav-subtag">8 Active</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Shift Summary Footer in Sidebar -->
+      <div class="sidebar-footer">
+        <div class="quick-shift-card">
+          <div class="shift-info">
+            <span class="shift-label">Today's Register</span>
+            <span class="shift-val" id="sidebarShiftRevenue">$4,862.50</span>
+          </div>
+          <button class="icon-action-btn" id="btnQuickReport" title="View Daily Snapshot">
+            <i class="fa-solid fa-receipt"></i>
+          </button>
+        </div>
+
+        <div class="user-profile-badge">
+          <img src="https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=120&q=80"
+            alt="Executive Chef Mateo" class="user-avatar" id="managerAvatar">
+          <div class="user-meta">
+            <span class="user-name">Mateo Vance</span>
+            <span class="user-role">General Manager</span>
+          </div>
+          <button class="user-menu-btn" id="userMenuBtn" aria-label="Settings">
+            <i class="fa-solid fa-gear"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Region -->
+    <div class="main-wrapper">
+
+      <!-- Top Header Bar -->
+      <header class="top-header" id="topHeader">
+        <div class="header-left">
+          <button class="mobile-menu-toggle" id="mobileMenuBtn" aria-label="Open Navigation">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="globalSearchInput"
+              placeholder="Search orders, tables, dishes (e.g. #1042, Table 4, Wagyu)..." autocomplete="off">
+            <kbd class="search-shortcut">⌘K</kbd>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Time and Shift Clock -->
+          <div class="clock-display" id="clockWidget">
+            <i class="fa-regular fa-clock"></i>
+            <span id="currentTimeDisplay">07:30:15 PM</span>
+            <span class="badge-sub">Shift: Evening</span>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <button class="btn btn-outline" id="btnOpenReservationModal">
+            <i class="fa-regular fa-calendar-plus"></i>
+            <span>Reserve Table</span>
+          </button>
+
+          <button class="btn btn-primary" id="btnOpenOrderModal">
+            <i class="fa-solid fa-plus"></i>
+            <span>New Order</span>
+          </button>
+
+          <!-- Notification Bell -->
+          <div class="notification-wrapper">
+            <button class="icon-round-btn" id="notifBellBtn" aria-label="Notifications">
+              <i class="fa-regular fa-bell"></i>
+              <span class="notif-badge" id="unreadNotifBadge">3</span>
+            </button>
+            <div class="notif-dropdown" id="notifDropdown">
+              <div class="notif-header">
+                <h3>Live Kitchen & Service Alerts</h3>
+                <button class="text-btn" id="btnMarkAllNotifsRead">Clear All</button>
+              </div>
+              <ul class="notif-list" id="notifList">
+                <!-- Dynamically populated notifications -->
+              </ul>
+            </div>
+          </div>
+
+          <!-- Sound Toggle -->
+          <button class="icon-round-btn" id="soundToggleBtn" title="Sound alerts enabled">
+            <i class="fa-solid fa-volume-high"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Scrollable Main View Container -->
+      <main class="content-body" id="mainContent">
+
+        <!-- ============================================== -->
+        <!-- VIEW 1: DASHBOARD OVERVIEW -->
+        <!-- ============================================== -->
+        <section class="view-panel active" id="view-dashboard">
+
+          <!-- Welcome & Operational Greeting -->
+          <div class="view-header">
+            <div>
+              <h1 class="page-title">Executive Dining Overview</h1>
+              <p class="page-subtitle">Real-time floor performance, kitchen throughput, and sales insights for
+                <strong>Dinner Service</strong>.</p>
+            </div>
+            <div class="header-actions">
+              <div class="segmented-control">
+                <button class="seg-btn active" data-period="today">Today</button>
+                <button class="seg-btn" data-period="week">This Week</button>
+                <button class="seg-btn" data-period="month">This Month</button>
+              </div>
+              <button class="btn btn-glass" id="btnRefreshStats">
+                <i class="fa-solid fa-arrows-rotate"></i>
+                <span>Refresh</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- KPI Metrics Row -->
+          <div class="metrics-grid">
+            <div class="metric-card glass-card revenue-card">
+              <div class="metric-icon-wrap bg-amber">
+                <i class="fa-solid fa-wallet"></i>
+              </div>
+              <div class="metric-content">
+                <span class="metric-label">Total Revenue Today</span>
+                <div class="metric-value-wrap">
+                  <span class="metric-value" id="kpiRevenue">$4,862.50</span>
+                  <span class="trend-chip positive">
+                    <i class="fa-solid fa-arrow-trend-up"></i> +14.8%
+                  </span>
+                </div>
+                <span class="metric-note">Target: $5,500.00 (88% achieved)</span>
+              </div>
+              <div class="metric-sparkle"></div>
+            </div>
+
+            <div class="metric-card glass-card">
+              <div class="metric-icon-wrap bg-emerald">
+                <i class="fa-solid fa-bowl-food"></i>
+              </div>
+              <div class="metric-content">
+                <span class="metric-label">Completed Orders</span>
+                <div class="metric-value-wrap">
+                  <span class="metric-value" id="kpiCompletedOrders">128</span>
+                  <span class="trend-chip positive">
+                    <i class="fa-solid fa-arrow-trend-up"></i> +8.2%
+                  </span>
+                </div>
+                <span class="metric-note"><span id="kpiActiveOrdersCount">7</span> active in kitchen queue</span>
+              </div>
+            </div>
+
+            <div class="metric-card glass-card">
+              <div class="metric-icon-wrap bg-indigo">
+                <i class="fa-solid fa-chair"></i>
+              </div>
+              <div class="metric-content">
+                <span class="metric-label">Table Occupancy</span>
+                <div class="metric-value-wrap">
+                  <span class="metric-value" id="kpiOccupancy">19 / 24</span>
+                  <span class="badge-tag info" id="kpiOccupancyPct">79% Occupied</span>
+                </div>
+                <span class="metric-note">5 tables available for walk-ins</span>
+              </div>
+            </div>
+
+            <div class="metric-card glass-card">
+              <div class="metric-icon-wrap bg-rose">
+                <i class="fa-solid fa-stopwatch-20"></i>
+              </div>
+              <div class="metric-content">
+                <span class="metric-label">Avg. Turnaround Time</span>
+                <div class="metric-value-wrap">
+                  <span class="metric-value" id="kpiPrepTime">16.4 min</span>
+                  <span class="trend-chip positive">
+                    <i class="fa-solid fa-arrow-trend-down"></i> -2.1 min
+                  </span>
+                </div>
+                <span class="metric-note">Kitchen prep speed: Optimal</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Layout: 2 Columns (Live Orders + Floor Grid) & (Sales Chart + Top Dishes) -->
+          <div class="dashboard-split-layout">
+
+            <!-- Left Column: Live Kitchen Pipeline & Quick Floor Map -->
+            <div class="dash-col-left">
+
+              <!-- Live Order Tickets Card -->
+              <div class="panel-card glass-card">
+                <div class="panel-header">
+                  <div class="panel-title-group">
+                    <div class="icon-heading">
+                      <i class="fa-solid fa-kitchen-set"></i>
+                      <h2>Active Kitchen & Bar Queue</h2>
+                    </div>
+                    <span class="pulse-indicator">Live Updates</span>
+                  </div>
+                  <div class="panel-controls">
+                    <div class="filter-pill-group" id="orderStatusFilters">
+                      <button class="pill-btn active" data-filter="all">All (<span
+                          id="allOrdersFilterCount">7</span>)</button>
+                      <button class="pill-btn" data-filter="prep">Cooking (<span
+                          id="prepOrdersFilterCount">4</span>)</button>
+                      <button class="pill-btn" data-filter="ready">Ready (<span
+                          id="readyOrdersFilterCount">2</span>)</button>
+                      <button class="pill-btn" data-filter="pending">New (<span
+                          id="newOrdersFilterCount">1</span>)</button>
+                    </div>
+                    <button class="btn btn-xs btn-outline" id="viewAllOrdersBtn">Full Board <i
+                        class="fa-solid fa-arrow-right"></i></button>
+                  </div>
+                </div>
+
+                <!-- Orders Grid -->
+                <div class="live-orders-container" id="dashboardOrdersQueue">
+                  <!-- Rendered dynamically by JS -->
+                </div>
+              </div>
+
+              <!-- Floor Status Quick Map -->
+              <div class="panel-card glass-card">
+                <div class="panel-header">
+                  <div class="panel-title-group">
+                    <div class="icon-heading">
+                      <i class="fa-solid fa-border-all"></i>
+                      <h2>Restaurant Floor Status</h2>
+                    </div>
+                    <span class="legend-summary">
+                      <span class="legend-dot occupied"></span> Occupied
+                      <span class="legend-dot available"></span> Available
+                      <span class="legend-dot reserved"></span> Reserved
+                      <span class="legend-dot bill"></span> Bill Requested
+                    </span>
+                  </div>
+                  <button class="btn btn-xs btn-outline" id="viewAllTablesBtn">Floor Plan <i
+                      class="fa-solid fa-arrow-right"></i></button>
+                </div>
+
+                <div class="quick-tables-grid" id="dashboardQuickTablesGrid">
+                  <!-- Rendered dynamically by JS -->
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Right Column: Revenue Curve & Top Specialties -->
+            <div class="dash-col-right">
+
+              <!-- Hourly Revenue Chart -->
+              <div class="panel-card glass-card chart-card">
+                <div class="panel-header">
+                  <div class="panel-title-group">
+                    <div class="icon-heading">
+                      <i class="fa-solid fa-chart-line"></i>
+                      <h2>Hourly Sales Velocity</h2>
+                    </div>
+                  </div>
+                  <div class="chart-type-toggle">
+                    <button class="btn btn-xs active" id="btnChartRevenue">Revenue ($)</button>
+                    <button class="btn btn-xs" id="btnChartCovers">Covers (Guests)</button>
+                  </div>
+                </div>
+                <div class="chart-wrapper">
+                  <canvas id="salesVelocityChart"></canvas>
+                </div>
+              </div>
+
+              <!-- Top Performing Dishes -->
+              <div class="panel-card glass-card">
+                <div class="panel-header">
+                  <div class="panel-title-group">
+                    <div class="icon-heading">
+                      <i class="fa-solid fa-fire"></i>
+                      <h2>Chef's Bestsellers Tonight</h2>
+                    </div>
+                  </div>
+                  <span class="badge-tag gold">Top Revenue</span>
+                </div>
+
+                <div class="bestsellers-list" id="bestsellersList">
+                  <!-- Rendered dynamically by JS -->
+                </div>
+              </div>
+
+              <!-- Quick Shift Team On Duty -->
+              <div class="panel-card glass-card">
+                <div class="panel-header">
+                  <div class="panel-title-group">
+                    <div class="icon-heading">
+                      <i class="fa-solid fa-user-check"></i>
+                      <h2>Active Service Staff</h2>
+                    </div>
+                  </div>
+                  <span class="badge-tag emerald">Shift Coverage: 100%</span>
+                </div>
+                <div class="staff-mini-list" id="staffMiniList">
+                  <!-- Rendered dynamically by JS -->
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+        <!-- ============================================== -->
+        <!-- VIEW 2: LIVE ORDERS MANAGEMENT (POS & KDS) -->
+        <!-- ============================================== -->
+        <section class="view-panel" id="view-orders">
+          <div class="view-header">
+            <div>
+              <h1 class="page-title">Live Kitchen & Bar Order Dispatcher</h1>
+              <p class="page-subtitle">Manage order life-cycles from intake to prep, plated ready, and final billing.
+              </p>
+            </div>
+            <div class="header-actions">
+              <div class="search-input-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="orderSearchInput" placeholder="Filter by ticket # or table...">
+              </div>
+              <button class="btn btn-primary" id="btnOpenNewOrderFromBoard">
+                <i class="fa-solid fa-plus"></i> New Ticket
+              </button>
+            </div>
+          </div>
+
+          <!-- Kitchen Kanban Board: Pending -> Cooking -> Ready -> Served -->
+          <div class="kanban-board">
+
+            <!-- Column 1: New / Received -->
+            <div class="kanban-col" data-status="pending">
+              <div class="kanban-col-header status-pending">
+                <div class="col-title">
+                  <span class="status-indicator-dot pending"></span>
+                  <h3>New Received</h3>
+                </div>
+                <span class="col-count-badge" id="colCountPending">1</span>
+              </div>
+              <div class="kanban-cards-container" id="kanbanPending">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <!-- Column 2: In Preparation -->
+            <div class="kanban-col" data-status="prep">
+              <div class="kanban-col-header status-prep">
+                <div class="col-title">
+                  <span class="status-indicator-dot prep"></span>
+                  <h3>In Kitchen Prep</h3>
+                </div>
+                <span class="col-count-badge" id="colCountPrep">4</span>
+              </div>
+              <div class="kanban-cards-container" id="kanbanPrep">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <!-- Column 3: Plated / Ready for Service -->
+            <div class="kanban-col" data-status="ready">
+              <div class="kanban-col-header status-ready">
+                <div class="col-title">
+                  <span class="status-indicator-dot ready"></span>
+                  <h3>Plated & Ready</h3>
+                </div>
+                <span class="col-count-badge" id="colCountReady">2</span>
+              </div>
+              <div class="kanban-cards-container" id="kanbanReady">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <!-- Column 4: Completed / Settled -->
+            <div class="kanban-col" data-status="completed">
+              <div class="kanban-col-header status-completed">
+                <div class="col-title">
+                  <span class="status-indicator-dot completed"></span>
+                  <h3>Served / Closed</h3>
+                </div>
+                <span class="col-count-badge" id="colCountCompleted">18</span>
+              </div>
+              <div class="kanban-cards-container" id="kanbanCompleted">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- VIEW 3: TABLE FLOOR PLAN & RESERVATIONS -->
+        <!-- ============================================== -->
+        <section class="view-panel" id="view-tables">
+          <div class="view-header">
+            <div>
+              <h1 class="page-title">Interactive Floor Layout & Seating</h1>
+              <p class="page-subtitle">Real-time table occupancy, guest headcounts, active orders, and reservation
+                scheduling.</p>
+            </div>
+            <div class="header-actions">
+              <div class="zone-filter-group" id="zoneFilterGroup">
+                <button class="pill-btn active" data-zone="all">All Zones</button>
+                <button class="pill-btn" data-zone="Main Dining">Main Dining</button>
+                <button class="pill-btn" data-zone="Patio Terrace">Patio Terrace</button>
+                <button class="pill-btn" data-zone="VIP Lounge">VIP Lounge</button>
+                <button class="pill-btn" data-zone="Bar Counter">Bar Counter</button>
+              </div>
+              <button class="btn btn-primary" id="btnFloorNewReservation">
+                <i class="fa-regular fa-calendar-check"></i> Book Table
+              </button>
+            </div>
+          </div>
+
+          <!-- Floor Statistics Bar -->
+          <div class="floor-stats-strip">
+            <div class="f-stat-item">
+              <span class="f-stat-label">Total Tables</span>
+              <span class="f-stat-val">24 Tables (96 Seats)</span>
+            </div>
+            <div class="f-stat-separator"></div>
+            <div class="f-stat-item">
+              <span class="f-stat-label">Occupied</span>
+              <span class="f-stat-val color-rose" id="floorOccupiedCount">19 Tables</span>
+            </div>
+            <div class="f-stat-separator"></div>
+            <div class="f-stat-item">
+              <span class="f-stat-label">Available for Seating</span>
+              <span class="f-stat-val color-emerald" id="floorAvailableCount">5 Tables</span>
+            </div>
+            <div class="f-stat-separator"></div>
+            <div class="f-stat-item">
+              <span class="f-stat-label">Pending Reservations</span>
+              <span class="f-stat-val color-amber" id="floorReservedCount">4 Upcoming</span>
+            </div>
+          </div>
+
+          <!-- Interactive Full Floor Grid -->
+          <div class="full-floor-grid" id="fullFloorGrid">
+            <!-- Rendered by JS -->
+          </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- VIEW 4: MENU & DISH CATALOG -->
+        <!-- ============================================== -->
+        <section class="view-panel" id="view-menu">
+          <div class="view-header">
+            <div>
+              <h1 class="page-title">Culinary Catalog & Pricing</h1>
+              <p class="page-subtitle">Update pricing, manage in-stock status, and review item performance.</p>
+            </div>
+            <div class="header-actions">
+              <div class="search-input-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="menuSearchInput" placeholder="Search dishes, cocktails, desserts...">
+              </div>
+              <button class="btn btn-primary" id="btnAddNewDish">
+                <i class="fa-solid fa-plus"></i> Add Item
+              </button>
+            </div>
+          </div>
+
+          <!-- Menu Category Tabs -->
+          <div class="menu-category-tabs" id="menuCategoryTabs">
+            <button class="cat-tab active" data-category="all">All Offerings</button>
+            <button class="cat-tab" data-category="Starters">Starters & Small Plates</button>
+            <button class="cat-tab" data-category="Mains">Entrées & Mains</button>
+            <button class="cat-tab" data-category="Steaks">Prime Steaks & Grill</button>
+            <button class="cat-tab" data-category="Desserts">Artisanal Desserts</button>
+            <button class="cat-tab" data-category="Beverages">Cocktails & Cellar</button>
+          </div>
+
+          <!-- Menu Grid -->
+          <div class="menu-items-grid" id="menuItemsGrid">
+            <!-- Rendered dynamically by JS -->
+          </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- VIEW 5: SALES & FINANCIAL ANALYTICS -->
+        <!-- ============================================== -->
+        <section class="view-panel" id="view-analytics">
+          <div class="view-header">
+            <div>
+              <h1 class="page-title">Sales Analytics & Insights</h1>
+              <p class="page-subtitle">Deep dive into revenue trends, item profitability, average ticket size, and
+                payment modes.</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-outline" id="btnExportCSV">
+                <i class="fa-solid fa-download"></i> Export Data (CSV)
+              </button>
+              <button class="btn btn-primary" id="btnPrintReport">
+                <i class="fa-solid fa-print"></i> Print End of Shift
+              </button>
+            </div>
+          </div>
+
+          <!-- High Level Financial Cards -->
+          <div class="metrics-grid">
+            <div class="metric-card glass-card">
+              <span class="metric-label">Gross Revenue Today</span>
+              <div class="metric-value-wrap">
+                <span class="metric-value">$4,862.50</span>
+              </div>
+              <span class="metric-note">Tax collected: $389.00</span>
+            </div>
+            <div class="metric-card glass-card">
+              <span class="metric-label">Average Check Size</span>
+              <div class="metric-value-wrap">
+                <span class="metric-value">$84.20</span>
+                <span class="trend-chip positive">+6.4%</span>
+              </div>
+              <span class="metric-note">Per guest spend: $38.50</span>
+            </div>
+            <div class="metric-card glass-card">
+              <span class="metric-label">Total Covers Served</span>
+              <div class="metric-value-wrap">
+                <span class="metric-value">146 Guests</span>
+              </div>
+              <span class="metric-note">Peak seating: 8:00 PM - 9:30 PM</span>
+            </div>
+            <div class="metric-card glass-card">
+              <span class="metric-label">Staff Gratuities (Tips)</span>
+              <div class="metric-value-wrap">
+                <span class="metric-value">$784.00</span>
+                <span class="trend-chip positive">18.2% avg</span>
+              </div>
+              <span class="metric-note">Shared across floor & kitchen team</span>
+            </div>
+          </div>
+
+          <!-- Analytics Charts Grid -->
+          <div class="analytics-charts-grid">
+            <div class="panel-card glass-card">
+              <div class="panel-header">
+                <div class="icon-heading">
+                  <i class="fa-solid fa-chart-column"></i>
+                  <h2>Category Revenue Share</h2>
+                </div>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="categoryShareChart"></canvas>
+              </div>
+            </div>
+
+            <div class="panel-card glass-card">
+              <div class="panel-header">
+                <div class="icon-heading">
+                  <i class="fa-solid fa-credit-card"></i>
+                  <h2>Payment Distribution</h2>
+                </div>
+              </div>
+              <div class="chart-wrapper">
+                <canvas id="paymentMethodsChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- VIEW 6: INVENTORY & STOCK MONITOR -->
+        <!-- ============================================== -->
+        <section class="view-panel" id="view-inventory">
+          <div class="view-header">
+            <div>
+              <h1 class="page-title">Pantry & Wine Cellar Inventory</h1>
+              <p class="page-subtitle">Automatic 86-list warnings, par levels, and supplier restock alerts.</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-primary" id="btnStockOrderModal">
+                <i class="fa-solid fa-truck-ramp-box"></i> Order Ingredients
+              </button>
+            </div>
+          </div>
+
+          <div class="inventory-table-card glass-card">
+            <table class="modern-table">
+              <thead>
+                <tr>
+                  <th>Item Description</th>
+                  <th>Category</th>
+                  <th>Current Stock</th>
+                  <th>Par Level</th>
+                  <th>Status</th>
+                  <th>Supplier</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="inventoryTableBody">
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ============================================== -->
+        <!-- VIEW 7: STAFF ROSTER -->
+        <!-- ============================================== -->
+        <section class="view-panel" id="view-staff">
+          <div class="view-header">
+            <div>
+              <h1 class="page-title">Staff on Duty & Station Assignment</h1>
+              <p class="page-subtitle">Front of house, line cooks, mixologists, and dining room leads.</p>
+            </div>
+            <div class="header-actions">
+              <button class="btn btn-outline" id="btnClockInStaff">
+                <i class="fa-solid fa-fingerprint"></i> Staff Check-In
+              </button>
+            </div>
+          </div>
+
+          <div class="staff-cards-grid" id="staffCardsGrid">
+            <!-- Injected by JS -->
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL 1: NEW ORDER / POS TERMINAL -->
+  <!-- ============================================== -->
+  <div class="modal-overlay" id="newOrderModal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <i class="fa-solid fa-receipt"></i>
+          <h3>Create New Table Order / POS</h3>
+        </div>
+        <button class="modal-close-btn" id="closeOrderModal">&times;</button>
+      </div>
+
+      <div class="pos-modal-layout">
+
+        <!-- Left POS: Menu Selector -->
+        <div class="pos-left-catalog">
+          <div class="pos-cat-filter" id="posCategoryFilter">
+            <button class="pos-pill active" data-pos-cat="all">All</button>
+            <button class="pos-pill" data-pos-cat="Starters">Starters</button>
+            <button class="pos-pill" data-pos-cat="Mains">Mains</button>
+            <button class="pos-pill" data-pos-cat="Steaks">Grill</button>
+            <button class="pos-pill" data-pos-cat="Desserts">Desserts</button>
+            <button class="pos-pill" data-pos-cat="Beverages">Drinks</button>
+          </div>
+
+          <div class="pos-item-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="posSearchInput" placeholder="Quick find item...">
+          </div>
+
+          <div class="pos-items-grid" id="posItemsList">
+            <!-- Dynamic dishes -->
+          </div>
+        </div>
+
+        <!-- Right POS: Ticket Summary -->
+        <div class="pos-right-ticket">
+          <div class="ticket-meta-fields">
+            <div class="form-group">
+              <label for="posTableSelect">Target Table</label>
+              <select id="posTableSelect" class="form-select">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="posGuestCount">Guests</label>
+              <input type="number" id="posGuestCount" class="form-input" value="2" min="1" max="16">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="posServerSelect">Assigned Waiter</label>
+            <select id="posServerSelect" class="form-select">
+              <option value="Mateo V. (GM)">Mateo V. (Floor Lead)</option>
+              <option value="Elena Rostova">Elena Rostova</option>
+              <option value="Lucas Silva">Lucas Silva</option>
+              <option value="Sophie Martin">Sophie Martin</option>
+            </select>
+          </div>
+
+          <div class="ticket-items-scroll" id="posTicketItems">
+            <div class="empty-ticket-hint">
+              <i class="fa-solid fa-basket-shopping"></i>
+              <p>No items added yet.<br>Click items on the left to add to this ticket.</p>
+            </div>
+          </div>
+
+          <!-- Pricing summary -->
+          <div class="ticket-totals">
+            <div class="total-row">
+              <span>Subtotal</span>
+              <span id="posSubtotal">$0.00</span>
+            </div>
+            <div class="total-row">
+              <span>Tax (8%)</span>
+              <span id="posTax">$0.00</span>
+            </div>
+            <div class="total-row total-highlight">
+              <span>Total Due</span>
+              <span id="posGrandTotal">$0.00</span>
+            </div>
+          </div>
+
+          <div class="form-group mt-2">
+            <label for="posKitchenNotes">Kitchen Special Notes</label>
+            <input type="text" id="posKitchenNotes" class="form-input"
+              placeholder="e.g. Nut allergy, medium rare steak, extra napkins...">
+          </div>
+
+          <div class="pos-actions-bar">
+            <button class="btn btn-outline" id="btnCancelOrder">Clear Ticket</button>
+            <button class="btn btn-primary btn-grow" id="btnSubmitOrder">
+              <i class="fa-solid fa-paper-plane"></i> Send to Kitchen
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL 2: TABLE DETAILS & BILL SETTLEMENT -->
+  <!-- ============================================== -->
+  <div class="modal-overlay" id="tableDetailModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <i class="fa-solid fa-table-cells"></i>
+          <h3 id="tableModalTitle">Table T-04 Management</h3>
+        </div>
+        <button class="modal-close-btn" id="closeTableModal">&times;</button>
+      </div>
+
+      <div class="modal-body" id="tableModalBody">
+        <!-- Rendered dynamically depending on table status -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL 3: TABLE RESERVATION -->
+  <!-- ============================================== -->
+  <div class="modal-overlay" id="reservationModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <i class="fa-regular fa-calendar-check"></i>
+          <h3>Reserve Dining Table</h3>
+        </div>
+        <button class="modal-close-btn" id="closeResModal">&times;</button>
+      </div>
+
+      <form id="reservationForm" class="modal-body">
+        <div class="form-group">
+          <label for="resGuestName">Guest Full Name</label>
+          <input type="text" id="resGuestName" class="form-input" placeholder="e.g. Lady Vivienne Montgomery" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="resPartySize">Party Size</label>
+            <input type="number" id="resPartySize" class="form-input" min="1" max="14" value="4" required>
+          </div>
+          <div class="form-group">
+            <label for="resTime">Reservation Time</label>
+            <input type="time" id="resTime" class="form-input" value="20:00" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="resTableSelect">Select Available Table</label>
+          <select id="resTableSelect" class="form-select" required>
+            <!-- Injected by JS -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="resPhone">Contact Phone</label>
+          <input type="tel" id="resPhone" class="form-input" placeholder="+1 (555) 349-8201">
+        </div>
+
+        <div class="form-group">
+          <label for="resNotes">Special Requests (VIP, Anniversary, High Chair)</label>
+          <textarea id="resNotes" class="form-textarea" rows="2"
+            placeholder="Anniversary champagne on arrival, quiet booth preferred"></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" id="btnCancelRes">Cancel</button>
+          <button type="submit" class="btn btn-primary">Confirm Reservation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Main JavaScript File -->
+  <script src="app.js"></script>
+</body>
+
+</html>
